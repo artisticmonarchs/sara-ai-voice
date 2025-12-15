@@ -1,0 +1,1662 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sara AI — Enterprise-Grade Outbound Voice Agent System</title>
+  <meta name="description" content="Sara AI is a production-grade outbound voice agent system that calls US businesses and books meetings. Built on Twilio Media Streams, Deepgram, OpenAI, Redis/Celery, and Cloudflare R2." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --bg-primary: #050811;
+      --bg-secondary: #0A0F1D;
+      --bg-card: rgba(10, 15, 29, 0.95);
+      --text-primary: #FFFFFF;
+      --text-secondary: #94A3B8;
+      --text-tertiary: #64748B;
+      --accent-blue: #3B82F6;
+      --accent-teal: #06D6A0;
+      --accent-purple: #8B5CF6;
+      --accent-pink: #EC4899;
+      --accent-amber: #F59E0B;
+      --gradient-primary: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      --gradient-success: linear-gradient(135deg, var(--accent-teal), #10B981);
+      --gradient-warning: linear-gradient(135deg, var(--accent-amber), #F97316);
+      --gradient-accent: linear-gradient(135deg, var(--accent-purple), var(--accent-pink));
+      --border-color: rgba(255, 255, 255, 0.1);
+      --glow-blue: 0 0 40px rgba(59, 130, 246, 0.4);
+      --glow-teal: 0 0 40px rgba(6, 214, 160, 0.4);
+      --glow-purple: 0 0 40px rgba(139, 92, 246, 0.4);
+      --radius-xl: 32px;
+      --radius-lg: 24px;
+      --radius-md: 16px;
+      --radius-sm: 8px;
+      --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Cinematic Background */
+    .cinematic-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -2;
+      overflow: hidden;
+    }
+
+    .particle-container {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+    }
+
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--accent-blue) 0%, transparent 70%);
+      opacity: 0.15;
+      filter: blur(40px);
+    }
+
+    .noise-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.02'/%3E%3C/svg%3E");
+      z-index: -1;
+      opacity: 0.03;
+      pointer-events: none;
+    }
+
+    /* Floating Grid */
+    .floating-grid {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      z-index: -1;
+      mask-image: radial-gradient(circle at 50% 50%, black 30%, transparent 70%);
+      opacity: 0.3;
+      animation: gridFloat 20s infinite linear;
+    }
+
+    @keyframes gridFloat {
+      0% {
+        transform: translate(0, 0) rotate(0deg);
+      }
+      100% {
+        transform: translate(-30px, 30px) rotate(0.5deg);
+      }
+    }
+
+    /* Container */
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 32px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Premium Header */
+    .premium-header {
+      padding: 32px 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(30px);
+      background: rgba(5, 8, 17, 0.85);
+      border-bottom: 1px solid var(--border-color);
+      animation: headerReveal 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes headerReveal {
+      from {
+        opacity: 0;
+        transform: translateY(-40px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo-master {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      position: relative;
+    }
+
+    .logo-orb {
+      width: 60px;
+      height: 60px;
+      border-radius: 18px;
+      background: var(--gradient-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      box-shadow: var(--glow-blue);
+      animation: orbPulse 4s ease-in-out infinite;
+    }
+
+    @keyframes orbPulse {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: var(--glow-blue);
+      }
+      50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 60px rgba(59, 130, 246, 0.6);
+      }
+    }
+
+    .logo-orb i {
+      font-size: 26px;
+      color: white;
+    }
+
+    .logo-text {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .logo-subtitle {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-tertiary);
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .logo-title {
+      font-size: 28px;
+      font-weight: 900;
+      background: linear-gradient(to right, var(--text-primary), var(--accent-blue));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.5px;
+    }
+
+    .header-tags {
+      display: flex;
+      gap: 16px;
+    }
+
+    .header-tag {
+      padding: 12px 24px;
+      border-radius: 100px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      backdrop-filter: blur(10px);
+      transition: var(--transition-smooth);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .header-tag::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      transition: left 0.7s ease;
+    }
+
+    .header-tag:hover::before {
+      left: 100%;
+    }
+
+    .header-tag:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: var(--accent-blue);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Hero Section - Cinematic */
+    .hero-cinematic {
+      padding: 140px 0 100px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-content {
+      max-width: 900px;
+      margin: 0 auto;
+      text-align: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 24px;
+      border-radius: 100px;
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      color: var(--accent-blue);
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 40px;
+      backdrop-filter: blur(10px);
+      animation: badgeFloat 6s ease-in-out infinite;
+    }
+
+    @keyframes badgeFloat {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-10px);
+      }
+    }
+
+    .hero-badge::before {
+      content: '';
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent-teal);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+      50% {
+        opacity: 0.7;
+        transform: scale(1.2);
+      }
+    }
+
+    .hero-title {
+      font-size: 4.5rem;
+      font-weight: 900;
+      line-height: 1.05;
+      margin-bottom: 32px;
+      background: linear-gradient(to right, #FFFFFF, var(--accent-blue), var(--accent-teal));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: titleReveal 1.2s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
+    }
+
+    @keyframes titleReveal {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .hero-title {
+        font-size: 3rem;
+      }
+    }
+
+    .hero-subtitle {
+      font-size: 1.375rem;
+      color: var(--text-secondary);
+      max-width: 700px;
+      margin: 0 auto 48px;
+      line-height: 1.7;
+      animation: subtitleReveal 1.2s cubic-bezier(0.4, 0, 0.2, 1) 0.6s both;
+    }
+
+    @keyframes subtitleReveal {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .hero-highlight {
+      color: var(--text-primary);
+      font-weight: 700;
+      position: relative;
+      display: inline-block;
+    }
+
+    .hero-highlight::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: var(--gradient-success);
+      border-radius: 2px;
+    }
+
+    /* Feature Showcase */
+    .feature-showcase {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 40px;
+      margin-bottom: 140px;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-xl);
+      padding: 48px 40px;
+      backdrop-filter: blur(20px);
+      transition: var(--transition-smooth);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.02), transparent);
+      transform: translateX(-100%);
+      transition: transform 0.6s ease;
+    }
+
+    .feature-card:hover::before {
+      transform: translateX(100%);
+    }
+
+    .feature-card:hover {
+      transform: translateY(-20px);
+      border-color: var(--accent-blue);
+      box-shadow: 0 40px 80px rgba(0, 0, 0, 0.4), var(--glow-blue);
+    }
+
+    .feature-card:nth-child(2):hover {
+      border-color: var(--accent-teal);
+      box-shadow: 0 40px 80px rgba(0, 0, 0, 0.4), var(--glow-teal);
+    }
+
+    .feature-card:nth-child(3):hover {
+      border-color: var(--accent-purple);
+      box-shadow: 0 40px 80px rgba(0, 0, 0, 0.4), var(--glow-purple);
+    }
+
+    .feature-icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 24px;
+      background: rgba(59, 130, 246, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 32px;
+      color: var(--accent-blue);
+      font-size: 32px;
+      position: relative;
+    }
+
+    .feature-card:nth-child(2) .feature-icon {
+      background: rgba(6, 214, 160, 0.1);
+      color: var(--accent-teal);
+    }
+
+    .feature-card:nth-child(3) .feature-icon {
+      background: rgba(139, 92, 246, 0.1);
+      color: var(--accent-purple);
+    }
+
+    .feature-icon::after {
+      content: '';
+      position: absolute;
+      top: -10px;
+      left: -10px;
+      right: -10px;
+      bottom: -10px;
+      border-radius: 34px;
+      border: 2px solid currentColor;
+      opacity: 0.2;
+      animation: iconGlow 3s ease-in-out infinite;
+    }
+
+    @keyframes iconGlow {
+      0%, 100% {
+        opacity: 0.2;
+        transform: scale(1);
+      }
+      50% {
+        opacity: 0.4;
+        transform: scale(1.05);
+      }
+    }
+
+    .feature-title {
+      font-size: 1.75rem;
+      font-weight: 800;
+      margin-bottom: 20px;
+      background: linear-gradient(to right, var(--text-primary), var(--accent-blue));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .feature-card:nth-child(2) .feature-title {
+      background: linear-gradient(to right, var(--text-primary), var(--accent-teal));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .feature-card:nth-child(3) .feature-title {
+      background: linear-gradient(to right, var(--text-primary), var(--accent-purple));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .feature-description {
+      color: var(--text-secondary);
+      margin-bottom: 28px;
+      line-height: 1.7;
+    }
+
+    .feature-list {
+      list-style-type: none;
+    }
+
+    .feature-list li {
+      margin-bottom: 16px;
+      padding-left: 36px;
+      position: relative;
+      color: var(--text-secondary);
+      transition: color 0.3s ease;
+    }
+
+    .feature-list li::before {
+      content: '▸';
+      position: absolute;
+      left: 0;
+      color: var(--accent-blue);
+      font-weight: bold;
+      font-size: 20px;
+      transition: transform 0.3s ease;
+    }
+
+    .feature-list li:hover {
+      color: var(--text-primary);
+    }
+
+    .feature-list li:hover::before {
+      transform: translateX(5px);
+      color: var(--accent-teal);
+    }
+
+    .feature-list li b {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    /* Tech Stack - Premium */
+    .tech-premium {
+      margin-bottom: 140px;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 80px;
+    }
+
+    .section-badge {
+      display: inline-block;
+      padding: 10px 20px;
+      border-radius: 100px;
+      background: rgba(139, 92, 246, 0.15);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      color: var(--accent-purple);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .section-title {
+      font-size: 3.5rem;
+      font-weight: 900;
+      margin-bottom: 24px;
+      background: linear-gradient(to right, var(--text-primary), var(--accent-purple));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    @media (max-width: 768px) {
+      .section-title {
+        font-size: 2.5rem;
+      }
+    }
+
+    .section-subtitle {
+      font-size: 1.25rem;
+      color: var(--text-secondary);
+      max-width: 700px;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+
+    .tech-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 30px;
+      margin-bottom: 80px;
+    }
+
+    .tech-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 32px 24px;
+      text-align: center;
+      transition: var(--transition-smooth);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tech-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: var(--gradient-accent);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.5s ease;
+    }
+
+    .tech-card:hover::before {
+      transform: scaleX(1);
+    }
+
+    .tech-card:hover {
+      transform: translateY(-10px);
+      border-color: var(--accent-purple);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), var(--glow-purple);
+    }
+
+    .tech-icon {
+      width: 70px;
+      height: 70px;
+      margin: 0 auto 24px;
+      border-radius: 20px;
+      background: rgba(139, 92, 246, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-purple);
+      font-size: 28px;
+      position: relative;
+    }
+
+    .tech-icon::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 20px;
+      background: var(--gradient-accent);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .tech-card:hover .tech-icon::after {
+      opacity: 0.1;
+    }
+
+    .tech-icon i {
+      position: relative;
+      z-index: 1;
+    }
+
+    .tech-name {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .tech-description {
+      font-size: 14px;
+      color: var(--text-tertiary);
+      line-height: 1.6;
+    }
+
+    /* Pipeline Visualization - Premium */
+    .pipeline-premium {
+      position: relative;
+      max-width: 1000px;
+      margin: 0 auto 140px;
+      height: 200px;
+    }
+
+    .pipeline-line {
+      height: 4px;
+      background: linear-gradient(90deg, 
+        transparent 0%, 
+        var(--accent-blue) 20%, 
+        var(--accent-teal) 50%, 
+        var(--accent-purple) 80%, 
+        transparent 100%);
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 100%;
+      transform: translateY(-50%);
+      z-index: 1;
+      border-radius: 2px;
+      box-shadow: 0 0 30px rgba(59, 130, 246, 0.3);
+    }
+
+    .pipeline-dots {
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+      z-index: 2;
+    }
+
+    .pipeline-dot {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: var(--bg-card);
+      border: 3px solid var(--accent-blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-blue);
+      font-size: 28px;
+      position: relative;
+      transition: var(--transition-smooth);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .pipeline-dot:hover {
+      transform: scale(1.2);
+      box-shadow: 0 0 40px rgba(59, 130, 246, 0.5);
+    }
+
+    .pipeline-dot:nth-child(2) {
+      border-color: var(--accent-teal);
+      color: var(--accent-teal);
+    }
+
+    .pipeline-dot:nth-child(2):hover {
+      box-shadow: 0 0 40px rgba(6, 214, 160, 0.5);
+    }
+
+    .pipeline-dot:nth-child(3) {
+      border-color: var(--accent-purple);
+      color: var(--accent-purple);
+    }
+
+    .pipeline-dot:nth-child(3):hover {
+      box-shadow: 0 0 40px rgba(139, 92, 246, 0.5);
+    }
+
+    .pipeline-dot:nth-child(4) {
+      border-color: var(--accent-pink);
+      color: var(--accent-pink);
+    }
+
+    .pipeline-dot:nth-child(4):hover {
+      box-shadow: 0 0 40px rgba(236, 72, 153, 0.5);
+    }
+
+    .pipeline-dot:nth-child(5) {
+      border-color: var(--accent-amber);
+      color: var(--accent-amber);
+    }
+
+    .pipeline-dot:nth-child(5):hover {
+      box-shadow: 0 0 40px rgba(245, 158, 11, 0.5);
+    }
+
+    .pipeline-label {
+      position: absolute;
+      top: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+
+    /* Comparison Table - Premium */
+    .comparison-premium {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-xl);
+      padding: 60px;
+      margin-bottom: 140px;
+      backdrop-filter: blur(20px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .comparison-premium::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: var(--gradient-primary);
+    }
+
+    .comparison-premium::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.01), transparent);
+      pointer-events: none;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th {
+      text-align: left;
+      padding: 24px;
+      font-weight: 800;
+      color: var(--text-primary);
+      border-bottom: 1px solid var(--border-color);
+      font-size: 18px;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    td {
+      padding: 24px;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border-color);
+      transition: background-color 0.3s ease;
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .category-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+
+    .tag-blue {
+      background: rgba(59, 130, 246, 0.15);
+      color: var(--accent-blue);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .tag-teal {
+      background: rgba(6, 214, 160, 0.15);
+      color: var(--accent-teal);
+      border: 1px solid rgba(6, 214, 160, 0.3);
+    }
+
+    .tag-amber {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--accent-amber);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    /* Roadmap - Premium */
+    .roadmap-premium {
+      margin-bottom: 140px;
+    }
+
+    .roadmap-timeline {
+      position: relative;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .roadmap-timeline::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 4px;
+      height: 100%;
+      background: linear-gradient(to bottom, var(--accent-blue), var(--accent-purple));
+      border-radius: 2px;
+    }
+
+    .roadmap-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 60px;
+      position: relative;
+    }
+
+    .roadmap-item:nth-child(odd) {
+      flex-direction: row-reverse;
+    }
+
+    .roadmap-item-content {
+      width: 45%;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 40px;
+      backdrop-filter: blur(20px);
+      transition: var(--transition-smooth);
+      position: relative;
+    }
+
+    .roadmap-item:hover .roadmap-item-content {
+      transform: translateY(-10px);
+      border-color: var(--accent-blue);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), var(--glow-blue);
+    }
+
+    .roadmap-marker {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: var(--gradient-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 900;
+      font-size: 24px;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+      box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
+      transition: var(--transition-smooth);
+    }
+
+    .roadmap-item:hover .roadmap-marker {
+      transform: translateX(-50%) scale(1.2);
+      box-shadow: 0 0 40px rgba(59, 130, 246, 0.5);
+    }
+
+    .roadmap-item-content h3 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-bottom: 16px;
+      color: var(--text-primary);
+    }
+
+    .roadmap-item-content p {
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+
+    /* FAQ - Premium */
+    .faq-premium {
+      margin-bottom: 140px;
+    }
+
+    .faq-container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .faq-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      margin-bottom: 24px;
+      overflow: hidden;
+      transition: var(--transition-smooth);
+    }
+
+    .faq-item:hover {
+      border-color: var(--accent-blue);
+    }
+
+    .faq-question {
+      padding: 32px 40px;
+      font-weight: 800;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      user-select: none;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .faq-question::after {
+      content: '+';
+      font-size: 32px;
+      color: var(--accent-blue);
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .faq-item.active .faq-question::after {
+      transform: rotate(45deg);
+      color: var(--accent-teal);
+    }
+
+    .faq-answer {
+      padding: 0 40px;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s ease;
+      color: var(--text-secondary);
+      line-height: 1.8;
+    }
+
+    .faq-item.active .faq-answer {
+      padding-bottom: 40px;
+      max-height: 500px;
+    }
+
+    /* Footer - Premium */
+    .footer-premium {
+      border-top: 1px solid var(--border-color);
+      padding: 80px 0 60px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .footer-premium::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent-blue), var(--accent-teal), var(--accent-purple), transparent);
+    }
+
+    .footer-logo {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 40px;
+    }
+
+    .footer-logo-orb {
+      width: 80px;
+      height: 80px;
+      border-radius: 24px;
+      background: var(--gradient-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+      box-shadow: var(--glow-blue);
+    }
+
+    .footer-logo-orb i {
+      font-size: 36px;
+      color: white;
+    }
+
+    .footer-title {
+      font-size: 36px;
+      font-weight: 900;
+      background: linear-gradient(to right, var(--text-primary), var(--accent-blue));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 12px;
+    }
+
+    .footer-subtitle {
+      color: var(--text-tertiary);
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .footer-text {
+      color: var(--text-secondary);
+      font-size: 18px;
+      max-width: 700px;
+      margin: 0 auto 40px;
+      line-height: 1.7;
+    }
+
+    .copyright {
+      color: var(--text-tertiary);
+      font-size: 14px;
+      letter-spacing: 1px;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .roadmap-timeline::before {
+        left: 40px;
+      }
+      
+      .roadmap-item {
+        flex-direction: row !important;
+      }
+      
+      .roadmap-item-content {
+        width: calc(100% - 100px);
+        margin-left: 100px;
+      }
+      
+      .roadmap-marker {
+        left: 40px;
+        transform: translateX(0);
+      }
+      
+      .roadmap-item:hover .roadmap-marker {
+        transform: scale(1.2);
+      }
+      
+      .pipeline-premium {
+        height: auto;
+      }
+      
+      .pipeline-dots {
+        flex-direction: column;
+        align-items: center;
+        gap: 60px;
+      }
+      
+      .pipeline-line {
+        width: 4px;
+        height: 100%;
+        left: 50%;
+        top: 0;
+        transform: translateX(-50%);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 0 24px;
+      }
+      
+      .header-content {
+        flex-direction: column;
+        gap: 24px;
+      }
+      
+      .header-tags {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      
+      .hero-title {
+        font-size: 3rem;
+      }
+      
+      .feature-showcase {
+        grid-template-columns: 1fr;
+      }
+      
+      .tech-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .comparison-premium {
+        padding: 30px;
+        overflow-x: auto;
+      }
+      
+      table {
+        min-width: 800px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .tech-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .hero-title {
+        font-size: 2.5rem;
+      }
+      
+      .section-title {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Cinematic Background -->
+  <div class="cinematic-bg">
+    <div class="particle-container" id="particles"></div>
+    <div class="floating-grid"></div>
+    <div class="noise-overlay"></div>
+  </div>
+
+  <!-- Premium Header -->
+  <header class="premium-header">
+    <div class="container header-content">
+      <div class="logo-master">
+        <div class="logo-orb">
+          <i class="fas fa-robot"></i>
+        </div>
+        <div class="logo-text">
+          <div class="logo-subtitle">SARA AI</div>
+          <div class="logo-title">Outbound Voice Agent</div>
+        </div>
+      </div>
+      <div class="header-tags">
+        <div class="header-tag">Production-Grade</div>
+        <div class="header-tag">Voice-First</div>
+        <div class="header-tag">Enterprise-Ready</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Cinematic Hero -->
+    <section class="hero-cinematic">
+      <div class="hero-content">
+        <div class="hero-badge">Enterprise Voice Agent System</div>
+        <h1 class="hero-title">Transform Outbound Into<br>An Automated Growth Engine</h1>
+        <p class="hero-subtitle">
+          <span class="hero-highlight">Sara AI</span> is a full-stack outbound voice-agent system engineered to call US businesses, 
+          hold natural conversations, handle interruptions, and deliver one outcome: <span class="hero-highlight">booked meetings</span>.
+          <br><br>
+          You control the strategy—Sara executes with precision, consistency, and scale.
+        </p>
+      </div>
+    </section>
+
+    <!-- Feature Showcase -->
+    <section class="feature-showcase">
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-chart-line"></i>
+        </div>
+        <h3 class="feature-title">The Problem We Solve</h3>
+        <p class="feature-description">
+          Outbound is the most powerful growth channel for agencies—and the hardest to scale. 
+          Human dialers are expensive, inconsistent, and require constant management.
+        </p>
+        <ul class="feature-list">
+          <li>Manual calling doesn't scale without exponential hiring</li>
+          <li>Inconsistent messaging kills conversion rates</li>
+          <li>Operators need an execution engine—not another tool to babysit</li>
+          <li>Quality degradation over time erodes ROI</li>
+        </ul>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-bullseye"></i>
+        </div>
+        <h3 class="feature-title">Core Capabilities</h3>
+        <p class="feature-description">
+          Engineered for real-world phone conversations with advanced AI governance and telephony integration.
+        </p>
+        <ul class="feature-list">
+          <li><b>Outbound calling</b> to US businesses from targeted lists</li>
+          <li><b>Natural conversation loop</b> with live speech recognition</li>
+          <li><b>Interruption handling</b> for realistic human-like dialogue</li>
+          <li><b>Objective-focused</b> with meeting booking as primary goal</li>
+          <li><b>Production controls</b> for reliability and monitoring</li>
+        </ul>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-sliders-h"></i>
+        </div>
+        <h3 class="feature-title">Complete Operator Control</h3>
+        <p class="feature-description">
+          Maintain strategic control while automating execution with precision and consistency.
+        </p>
+        <ul class="feature-list">
+          <li><b>Offer & script</b>: Control messaging, angles, and closing logic</li>
+          <li><b>Compliance rules</b>: Automated opt-outs, refusals, and escalation</li>
+          <li><b>Voice persona</b>: Select tone, pace, and speaking style</li>
+          <li><b>Campaign pacing</b>: Concurrency, retries, and timing windows</li>
+          <li><b>Governance layers</b>: Multi-level safety and compliance controls</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Tech Stack -->
+    <section class="tech-premium">
+      <div class="section-header">
+        <div class="section-badge">Engineered Stack</div>
+        <h2 class="section-title">Built for Production,<br>Scaled for Enterprise</h2>
+        <p class="section-subtitle">
+          Sara AI is not "prompt engineering"—it's a fully engineered pipeline designed for real-world telephony 
+          with bidirectional audio, streaming services, controlled AI behavior, queueing, caching, and observability.
+        </p>
+      </div>
+
+      <div class="tech-grid">
+        <div class="tech-card">
+          <div class="tech-icon">
+            <i class="fas fa-phone-alt"></i>
+          </div>
+          <div class="tech-name">Twilio Media Streams</div>
+          <div class="tech-description">Live bidirectional audio streaming for real-time telephony</div>
+        </div>
+
+        <div class="tech-card">
+          <div class="tech-icon">
+            <i class="fas fa-microphone-alt"></i>
+          </div>
+          <div class="tech-name">Deepgram ASR/TTS</div>
+          <div class="tech-description">Real-time speech-to-text & text-to-speech with enterprise accuracy</div>
+        </div>
+
+        <div class="tech-card">
+          <div class="tech-icon">
+            <i class="fas fa-brain"></i>
+          </div>
+          <div class="tech-name">OpenAI LLM</div>
+          <div class="tech-description">Response generation under strict governance and prompts</div>
+        </div>
+
+        <div class="tech-card">
+          <div class="tech-icon">
+            <i class="fas fa-database"></i>
+          </div>
+          <div class="tech-name">Redis</div>
+          <div class="tech-description">State management, caching, and persistence layer</div>
+        </div>
+
+        <div class="tech-card">
+          <div class="tech-icon">
+            <i class="fas fa-tasks"></i>
+          </div>
+          <div class="tech-name">Celery Workers</div>
+          <div class="tech-description">Distributed background tasks and workload management</div>
+        </div>
+
+        <div class="tech-card">
+          <div class="tech-icon">
+            <i class="fas fa-cloud"></i>
+          </div>
+          <div class="tech-name">Cloudflare R2</div>
+          <div class="tech-description">Audio storage, caching, and content delivery</div>
+        </div>
+      </div>
+
+      <!-- Pipeline Visualization -->
+      <div class="pipeline-premium">
+        <div class="pipeline-line"></div>
+        <div class="pipeline-dots">
+          <div class="pipeline-dot">
+            <i class="fas fa-phone"></i>
+            <div class="pipeline-label">Call Initiation</div>
+          </div>
+          <div class="pipeline-dot">
+            <i class="fas fa-microphone"></i>
+            <div class="pipeline-label">Speech Recognition</div>
+          </div>
+          <div class="pipeline-dot">
+            <i class="fas fa-cogs"></i>
+            <div class="pipeline-label">LLM Processing</div>
+          </div>
+          <div class="pipeline-dot">
+            <i class="fas fa-volume-up"></i>
+            <div class="pipeline-label">Voice Response</div>
+          </div>
+          <div class="pipeline-dot">
+            <i class="fas fa-calendar-check"></i>
+            <div class="pipeline-label">Meeting Booking</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Comparison Table -->
+    <section>
+      <div class="section-header">
+        <div class="section-badge">Competitive Advantage</div>
+        <h2 class="section-title">Built for Outcomes,<br>Not Just Features</h2>
+        <p class="section-subtitle">
+          Sara AI differentiates through focus, governance, and enterprise-grade architecture designed 
+          specifically for outbound appointment-setting at scale.
+        </p>
+      </div>
+
+      <div class="comparison-premium">
+        <table>
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Market Examples</th>
+              <th>Their Focus</th>
+              <th>Sara AI Positioning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="category-tag tag-blue">AI Call Automation Platforms</span></td>
+              <td>Bland AI, Retell AI, Synthflow, Air.ai</td>
+              <td>Voice agents for inbound/outbound automation with developer tooling</td>
+              <td><span class="category-tag tag-teal">Outcome-focused outbound system</span> with strict governance and agency-first design</td>
+            </tr>
+            <tr>
+              <td><span class="category-tag tag-blue">Developer Voice Tooling</span></td>
+              <td>Vapi, Voiceflow</td>
+              <td>Developer platforms to build custom voice agents and workflows</td>
+              <td>Full-stack system (telephony + pipeline + ops) built for scale, not just flexibility</td>
+            </tr>
+            <tr>
+              <td><span class="category-tag tag-amber">Generic Chatbots</span></td>
+              <td>Standard AI chat interfaces</td>
+              <td>Text-based interactions, not designed for telephony constraints</td>
+              <td>Voice-first architecture engineered for real phone calls with duplex control</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Roadmap -->
+    <section class="roadmap-premium">
+      <div class="section-header">
+        <div class="section-badge">Strategic Roadmap</div>
+        <h2 class="section-title">From System to<br>SaaS Platform</h2>
+        <p class="section-subtitle">
+          The evolution of Sara AI from a powerful internal system to a fully-featured 
+          SaaS platform for agencies and operators.
+        </p>
+      </div>
+
+      <div class="roadmap-timeline">
+        <div class="roadmap-item">
+          <div class="roadmap-marker">1</div>
+          <div class="roadmap-item-content">
+            <h3>Owner Dashboard</h3>
+            <p>Comprehensive campaign setup, script management, pacing controls, and outcome analytics in an enterprise-grade interface.</p>
+          </div>
+        </div>
+
+        <div class="roadmap-item">
+          <div class="roadmap-marker">2</div>
+          <div class="roadmap-item-content">
+            <h3>Multi-Tenant Architecture</h3>
+            <p>Isolated tenants, dedicated numbers, custom prompts, and data separation for agencies serving multiple clients.</p>
+          </div>
+        </div>
+
+        <div class="roadmap-item">
+          <div class="roadmap-marker">3</div>
+          <div class="roadmap-item-content">
+            <h3>Enterprise Billing & Usage</h3>
+            <p>Comprehensive usage tracking, call caps, flexible plan tiers, and enterprise billing integration.</p>
+          </div>
+        </div>
+
+        <div class="roadmap-item">
+          <div class="roadmap-marker">4</div>
+          <div class="roadmap-item-content">
+            <h3>Self-Serve Onboarding</h3>
+            <p>Streamlined "connect Twilio + set script + launch campaign" workflow with guided setup and best practices.</p>
+          </div>
+        </div>
+
+        <div class="roadmap-item">
+          <div class="roadmap-marker">5</div>
+          <div class="roadmap-item-content">
+            <h3>Advanced Analytics & Monitoring</h3>
+            <p>Real-time transcripts, call summaries, conversion analytics, performance insights, and predictive optimization.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="faq-premium">
+      <div class="section-header">
+        <div class="section-badge">Enterprise FAQ</div>
+        <h2 class="section-title">Strategic Questions,<br>Definitive Answers</h2>
+        <p class="section-subtitle">
+          Critical information for enterprise decision-makers evaluating Sara AI's capabilities and positioning.
+        </p>
+      </div>
+
+      <div class="faq-container">
+        <div class="faq-item">
+          <div class="faq-question">Is Sara AI enterprise-ready today?</div>
+          <div class="faq-answer">
+            Sara AI is a production-grade system with core telephony, AI, and pipeline components fully operational. 
+            The SaaS packaging layer—self-serve onboarding, multi-tenant management, enterprise billing, and comprehensive UI—is 
+            the final phase that transforms this powerful internal system into a product operators can deploy without technical setup.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">How does Sara maintain strict governance and avoid deviation?</div>
+          <div class="faq-answer">
+            Multiple governance layers ensure strict adherence: system prompts, conversation playbooks, objection handling flows, 
+            and knowledge boundaries are injected at every conversation turn. For maximum safety, a response-gating mechanism can 
+            block or regenerate any output that violates rules before text-to-speech conversion. This multi-layered approach ensures 
+            consistent, on-brand, and compliant conversations at scale.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">What's the ideal use case for maximum ROI?</div>
+          <div class="faq-answer">
+            Appointment setting where the offer is clearly defined and the goal is single-step: book the qualifying call. 
+            This scenario provides the highest automation ROI with the lowest "creative ambiguity." Ideal for agencies, 
+            sales teams, and service providers with established offerings, clear value propositions, and systematic follow-up processes.
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Premium Footer -->
+  <footer class="footer-premium">
+    <div class="container">
+      <div class="footer-logo">
+        <div class="footer-logo-orb">
+          <i class="fas fa-robot"></i>
+        </div>
+        <div class="footer-title">Sara AI</div>
+        <div class="footer-subtitle">Outbound Voice Agent System</div>
+      </div>
+      
+      <p class="footer-text">
+        Sara AI is a voice-first outbound appointment-setting system: engineered for real calls, 
+        controlled by operators, and built to scale from internal system to enterprise SaaS platform.
+      </p>
+      
+      <p class="copyright">
+        © 2025 Sara AI. All rights reserved. Production-grade outbound voice agent system.
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    // Create dynamic particles
+    function createParticles() {
+      const container = document.getElementById('particles');
+      const particleCount = 15;
+      
+      for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        
+        const size = Math.random() * 300 + 100;
+        const x = Math.random() * 100;
+        const y = Math.random() * 100;
+        const hue = Math.random() * 60 + 200;
+        const delay = Math.random() * 5;
+        const duration = Math.random() * 20 + 20;
+        
+        particle.style.width = `${size}px`;
+        particle.style.height = `${size}px`;
+        particle.style.left = `${x}%`;
+        particle.style.top = `${y}%`;
+        particle.style.background = `radial-gradient(circle, hsl(${hue}, 100%, 70%) 0%, transparent 70%)`;
+        particle.style.animation = `float ${duration}s ease-in-out ${delay}s infinite`;
+        
+        container.appendChild(particle);
+      }
+    }
+
+    // FAQ Toggle
+    document.querySelectorAll('.faq-question').forEach(question => {
+      question.addEventListener('click', () => {
+        const item = question.parentElement;
+        const isActive = item.classList.contains('active');
+        
+        // Close all other items
+        document.querySelectorAll('.faq-item').forEach(otherItem => {
+          if (otherItem !== item) {
+            otherItem.classList.remove('active');
+          }
+        });
+        
+        // Toggle current item
+        item.classList.toggle('active', !isActive);
+      });
+    });
+
+    // Scroll animations
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -100px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0)';
+        }
+      });
+    }, observerOptions);
+
+    // Observe all animated elements
+    document.querySelectorAll('.feature-card, .tech-card, .roadmap-item-content, .faq-item').forEach(el => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(30px)';
+      el.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
+      observer.observe(el);
+    });
+
+    // Pipeline dot animations
+    document.addEventListener('DOMContentLoaded', () => {
+      createParticles();
+      
+      const pipelineDots = document.querySelectorAll('.pipeline-dot');
+      pipelineDots.forEach((dot, index) => {
+        setTimeout(() => {
+          dot.style.opacity = '1';
+          dot.style.transform = 'scale(1)';
+        }, index * 300);
+        
+        dot.style.opacity = '0';
+        dot.style.transform = 'scale(0.5)';
+        dot.style.transition = 'opacity 0.5s ease, transform 0.5s ease, box-shadow 0.3s ease';
+      });
+
+      // Add hover effects to cards
+      const cards = document.querySelectorAll('.feature-card, .tech-card, .roadmap-item-content');
+      cards.forEach(card => {
+        card.addEventListener('mouseenter', () => {
+          if (card.classList.contains('feature-card')) {
+            card.style.transform = 'translateY(-20px)';
+          } else if (card.classList.contains('tech-card')) {
+            card.style.transform = 'translateY(-10px)';
+          } else if (card.classList.contains('roadmap-item-content')) {
+            card.style.transform = 'translateY(-10px)';
+          }
+        });
+        
+        card.addEventListener('mouseleave', () => {
+          if (card.classList.contains('feature-card')) {
+            card.style.transform = 'translateY(0)';
+          } else if (card.classList.contains('tech-card')) {
+            card.style.transform = 'translateY(0)';
+          } else if (card.classList.contains('roadmap-item-content')) {
+            card.style.transform = 'translateY(0)';
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>
