@@ -187,12 +187,12 @@
     }
 
     .header-tags {
-      display: none; /* Hide on mobile */
+      display: none;
     }
 
     /* Mobile Menu Toggle */
     .mobile-menu-toggle {
-      display: none;
+      display: flex;
       width: 44px;
       height: 44px;
       border-radius: 12px;
@@ -522,7 +522,7 @@
       line-height: 1.5;
     }
 
-    /* Mobile Pipeline Visualization */
+    /* FIXED: Mobile Pipeline - No Text Overlap */
     .pipeline-premium {
       position: relative;
       margin: 0 auto 80px;
@@ -537,9 +537,10 @@
     .pipeline-dots {
       display: flex;
       flex-direction: column;
-      gap: 40px;
+      gap: 60px;
       align-items: center;
       position: relative;
+      padding: 20px 0;
     }
 
     .pipeline-dot {
@@ -555,6 +556,7 @@
       font-size: 20px;
       position: relative;
       transition: var(--transition-smooth);
+      z-index: 2;
     }
 
     .pipeline-dot:nth-child(2) {
@@ -577,6 +579,7 @@
       color: var(--accent-amber);
     }
 
+    /* FIXED: Pipeline labels with proper spacing and no overlap */
     .pipeline-label {
       position: absolute;
       top: 70px;
@@ -588,9 +591,15 @@
       white-space: nowrap;
       text-align: center;
       width: 120px;
+      line-height: 1.4;
+      padding: 4px 8px;
+      background: rgba(10, 15, 29, 0.8);
+      border-radius: 6px;
+      backdrop-filter: blur(10px);
+      z-index: 3;
     }
 
-    /* Connect pipeline dots with lines for mobile */
+    /* Connect pipeline dots with vertical line for mobile */
     .pipeline-dots::before {
       content: '';
       position: absolute;
@@ -600,7 +609,7 @@
       width: 2px;
       height: calc(100% - 60px);
       background: linear-gradient(to bottom, var(--accent-blue), var(--accent-teal), var(--accent-purple), var(--accent-pink), var(--accent-amber));
-      z-index: -1;
+      z-index: 1;
     }
 
     /* Mobile Comparison Table */
@@ -884,6 +893,47 @@
       letter-spacing: 1px;
     }
 
+    /* Responsive adjustments for very small screens */
+    @media (max-width: 360px) {
+      .pipeline-dots {
+        gap: 50px;
+      }
+      
+      .pipeline-dot {
+        width: 50px;
+        height: 50px;
+        font-size: 18px;
+      }
+      
+      .pipeline-label {
+        font-size: 11px;
+        width: 100px;
+        white-space: normal;
+        word-break: break-word;
+        line-height: 1.3;
+      }
+      
+      .tech-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .hero-title {
+        font-size: 1.75rem;
+      }
+      
+      .section-title {
+        font-size: 1.5rem;
+      }
+      
+      .feature-card {
+        padding: 24px 20px;
+      }
+      
+      .feature-title {
+        font-size: 1.125rem;
+      }
+    }
+
     /* Desktop Styles */
     @media (min-width: 768px) {
       .container {
@@ -1060,6 +1110,7 @@
         font-size: 14px;
       }
 
+      /* FIXED: Desktop Pipeline */
       .pipeline-premium {
         max-width: 1000px;
         margin: 0 auto 140px;
@@ -1090,6 +1141,7 @@
         flex-direction: row;
         justify-content: space-between;
         gap: 0;
+        padding: 0;
       }
 
       .pipeline-dots::before {
@@ -1108,6 +1160,10 @@
 
       .pipeline-label {
         top: 100px;
+        background: transparent;
+        backdrop-filter: none;
+        padding: 0;
+        width: auto;
       }
 
       .comparison-premium {
@@ -1243,28 +1299,6 @@
 
       .tech-grid {
         grid-template-columns: repeat(6, 1fr);
-      }
-    }
-
-    @media (max-width: 480px) {
-      .tech-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .hero-title {
-        font-size: 1.75rem;
-      }
-
-      .section-title {
-        font-size: 1.5rem;
-      }
-
-      .feature-card {
-        padding: 24px 20px;
-      }
-
-      .feature-title {
-        font-size: 1.125rem;
       }
     }
   </style>
@@ -1428,7 +1462,7 @@
         </div>
       </div>
 
-      <!-- Mobile Pipeline -->
+      <!-- FIXED: Mobile Pipeline with No Text Overlap -->
       <div class="pipeline-premium">
         <div class="pipeline-dots">
           <div class="pipeline-dot">
@@ -1626,7 +1660,6 @@
       const container = document.getElementById('particles');
       if (!container) return;
       
-      // Clear existing particles
       container.innerHTML = '';
       
       const particleCount = window.innerWidth < 768 ? 8 : 15;
