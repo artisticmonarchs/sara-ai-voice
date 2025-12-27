@@ -1,0 +1,1010 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sara AI Console — Dashboard Preview</title>
+  <meta name="description" content="A product preview dashboard for Sara AI — outbound calling AI agent." />
+  <style>
+    :root{
+      --bg:#070A12;
+      --panel:rgba(255,255,255,.06);
+      --panel2:rgba(255,255,255,.04);
+      --border:rgba(255,255,255,.12);
+      --text:rgba(255,255,255,.92);
+      --muted:rgba(255,255,255,.66);
+      --muted2:rgba(255,255,255,.45);
+      --good:#2EE59D;
+      --warn:#FFC857;
+      --bad:#FF4D6D;
+      --accent:#7C5CFF;
+      --accent2:#2EC5FF;
+      --shadow: 0 12px 40px rgba(0,0,0,.45);
+      --radius:18px;
+      --radius2:14px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:var(--sans);
+      color:var(--text);
+      background: radial-gradient(1000px 800px at 20% 10%, rgba(124,92,255,.18), transparent 60%),
+                  radial-gradient(900px 700px at 85% 30%, rgba(46,197,255,.14), transparent 55%),
+                  radial-gradient(800px 600px at 40% 90%, rgba(46,229,157,.10), transparent 55%),
+                  var(--bg);
+      overflow-x:hidden;
+    }
+
+    /* Subtle animated grid */
+    .bg-grid{
+      position:fixed; inset:0; pointer-events:none; opacity:.18;
+      background:
+        linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255,255,255,.06) 1px, transparent 1px);
+      background-size: 56px 56px;
+      mask-image: radial-gradient(500px 500px at 35% 25%, black 10%, transparent 70%);
+      animation: drift 12s ease-in-out infinite alternate;
+    }
+    @keyframes drift{ from{transform:translateY(0)} to{transform:translateY(-10px)} }
+
+    /* Layout */
+    .app{
+      display:grid;
+      grid-template-columns: 280px 1fr;
+      min-height:100vh;
+    }
+    aside{
+      position:sticky; top:0;
+      height:100vh;
+      padding:22px 18px;
+      border-right:1px solid var(--border);
+      background: linear-gradient(to bottom, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      backdrop-filter: blur(10px);
+    }
+    main{
+      padding:22px 22px 80px;
+      max-width: 1400px;
+      margin:0 auto;
+      width:100%;
+    }
+
+    /* Brand */
+    .brand{
+      display:flex; align-items:center; gap:10px;
+      padding:10px 10px 14px;
+      border-radius:14px;
+    }
+    .logo{
+      width:38px;height:38px;border-radius:12px;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.35), rgba(255,255,255,.08)),
+                  linear-gradient(135deg, rgba(124,92,255,.9), rgba(46,197,255,.85));
+      box-shadow: 0 10px 30px rgba(124,92,255,.22);
+    }
+    .brand h1{
+      margin:0; font-size:14px; letter-spacing:.4px;
+      line-height:1.1;
+    }
+    .brand p{
+      margin:2px 0 0;
+      font-size:12px;color:var(--muted); letter-spacing:.2px;
+    }
+
+    /* Nav */
+    .nav{
+      margin-top:12px;
+      display:flex; flex-direction:column; gap:6px;
+    }
+    .nav a{
+      display:flex; align-items:center; gap:10px;
+      padding:10px 10px;
+      border-radius:12px;
+      color:var(--muted);
+      text-decoration:none;
+      border:1px solid transparent;
+      transition: all .18s ease;
+      user-select:none;
+    }
+    .nav a:hover{
+      background: rgba(255,255,255,.06);
+      color:var(--text);
+      border-color: rgba(255,255,255,.10);
+    }
+    .nav a.active{
+      background: rgba(124,92,255,.14);
+      border-color: rgba(124,92,255,.28);
+      color:var(--text);
+    }
+    .nav .dot{
+      width:10px;height:10px;border-radius:99px;
+      background: rgba(255,255,255,.22);
+      box-shadow: 0 0 0 6px rgba(255,255,255,.03);
+    }
+    .nav a.active .dot{
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      box-shadow: 0 0 0 6px rgba(124,92,255,.12);
+    }
+
+    .aside-footer{
+      position:absolute; left:18px; right:18px; bottom:18px;
+      padding:12px;
+      border:1px solid var(--border);
+      border-radius:14px;
+      background: rgba(255,255,255,.04);
+    }
+    .small{
+      font-size:12px;color:var(--muted);
+      line-height:1.35;
+    }
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.05);
+      font-size:12px;
+      color:var(--muted);
+    }
+    .status{
+      width:8px;height:8px;border-radius:99px;
+      background: var(--good);
+      box-shadow: 0 0 0 6px rgba(46,229,157,.12);
+    }
+
+    /* Top bar */
+    .topbar{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:14px;
+      margin-bottom:16px;
+    }
+    .titleblock h2{
+      margin:0;
+      font-size:20px;
+      letter-spacing:.2px;
+    }
+    .titleblock p{
+      margin:6px 0 0;
+      font-size:13px;
+      color:var(--muted);
+      max-width: 720px;
+      line-height:1.45;
+    }
+    .actions{
+      display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;
+    }
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      gap:8px;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.05);
+      color:var(--text);
+      cursor:pointer;
+      transition: all .18s ease;
+      font-weight:600;
+      font-size:13px;
+      user-select:none;
+    }
+    .btn:hover{
+      transform: translateY(-1px);
+      background: rgba(255,255,255,.07);
+      border-color: rgba(255,255,255,.20);
+    }
+    .btn.primary{
+      background: linear-gradient(135deg, rgba(124,92,255,.95), rgba(46,197,255,.85));
+      border-color: rgba(124,92,255,.35);
+      box-shadow: 0 14px 35px rgba(124,92,255,.20);
+    }
+    .btn.primary:hover{
+      box-shadow: 0 16px 45px rgba(124,92,255,.26);
+    }
+    .btn.danger{
+      background: rgba(255,77,109,.12);
+      border-color: rgba(255,77,109,.25);
+      color: rgba(255,255,255,.92);
+    }
+
+    /* Grid sections */
+    .grid{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:14px;
+      margin-top:14px;
+    }
+    .grid2{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap:14px;
+      margin-top:14px;
+    }
+    .card{
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.04);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .card .hd{
+      padding:14px 14px 10px;
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      background: linear-gradient(to bottom, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      border-bottom:1px solid rgba(255,255,255,.08);
+    }
+    .card .hd h3{
+      margin:0; font-size:14px; letter-spacing:.2px;
+    }
+    .card .bd{
+      padding:14px;
+    }
+
+    /* KPI tiles */
+    .kpis{
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap:12px;
+      margin-top:14px;
+    }
+    .kpi{
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.03);
+      border-radius: 16px;
+      padding:12px 12px;
+      position:relative;
+      overflow:hidden;
+    }
+    .kpi:before{
+      content:"";
+      position:absolute; inset:-1px;
+      background: radial-gradient(500px 200px at 20% 0%, rgba(124,92,255,.16), transparent 60%),
+                  radial-gradient(350px 180px at 80% 30%, rgba(46,197,255,.12), transparent 60%);
+      opacity:.9;
+      pointer-events:none;
+    }
+    .kpi > *{ position:relative; }
+    .kpi .label{ font-size:12px; color:var(--muted); }
+    .kpi .value{ font-size:22px; font-weight:800; margin-top:6px; letter-spacing:.3px; }
+    .kpi .sub{ font-size:12px; color:var(--muted2); margin-top:6px; line-height:1.35; }
+
+    /* Live calls list */
+    .calls{
+      display:flex; flex-direction:column; gap:10px;
+    }
+    .call{
+      display:grid;
+      grid-template-columns: 1fr auto;
+      gap:10px;
+      padding:12px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+    }
+    .call .meta{
+      display:flex; flex-direction:column; gap:6px;
+      min-width:0;
+    }
+    .call .row{
+      display:flex; align-items:center; gap:10px;
+      min-width:0;
+    }
+    .tag{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.04);
+      font-size:12px;
+      color:var(--muted);
+      white-space:nowrap;
+    }
+    .tag.good{ border-color: rgba(46,229,157,.25); background: rgba(46,229,157,.08); color: rgba(255,255,255,.88); }
+    .tag.warn{ border-color: rgba(255,200,87,.25); background: rgba(255,200,87,.08); color: rgba(255,255,255,.88); }
+    .tag.bad{ border-color: rgba(255,77,109,.25); background: rgba(255,77,109,.08); color: rgba(255,255,255,.88); }
+    .call .name{
+      font-weight:700; font-size:13px;
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    }
+    .call .desc{
+      font-size:12px; color:var(--muted);
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    }
+    .call .right{
+      display:flex; align-items:flex-start; gap:10px; flex-direction:column;
+      min-width: 130px;
+      text-align:right;
+    }
+    .call .timer{
+      font-family:var(--mono);
+      font-size:12px;
+      color:rgba(255,255,255,.85);
+    }
+    .call .mini-btn{
+      padding:8px 10px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+      cursor:pointer;
+      font-weight:700;
+      font-size:12px;
+      transition:.18s ease;
+    }
+    .call .mini-btn:hover{ background: rgba(255,255,255,.06); transform: translateY(-1px); }
+
+    /* Live console */
+    .console{
+      display:flex; flex-direction:column; gap:10px;
+    }
+    .console .panel{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      border-radius: 16px;
+      padding:12px;
+    }
+    .console .line{
+      display:flex; gap:10px; align-items:flex-start;
+      font-size:13px; line-height:1.45;
+      padding:10px 10px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.08);
+      background: rgba(0,0,0,.12);
+      margin-bottom:10px;
+    }
+    .who{
+      min-width: 72px;
+      font-weight:800;
+      letter-spacing:.2px;
+      color: rgba(255,255,255,.9);
+    }
+    .who.sara{ color: rgba(124,92,255,.95); }
+    .who.prospect{ color: rgba(46,197,255,.9); }
+    .line .text{
+      color: rgba(255,255,255,.85);
+      flex:1;
+    }
+    .line .stamp{
+      font-family:var(--mono);
+      font-size:11px;
+      color:var(--muted2);
+      margin-left:10px;
+      white-space:nowrap;
+    }
+    .divider{
+      height:1px;
+      background: rgba(255,255,255,.08);
+      margin:10px 0;
+    }
+
+    /* Forms */
+    .form{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+    }
+    .field{
+      display:flex; flex-direction:column; gap:6px;
+    }
+    label{ font-size:12px; color:var(--muted); }
+    input, select{
+      width:100%;
+      padding:10px 12px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.18);
+      color: var(--text);
+      outline:none;
+      transition:.18s ease;
+    }
+    input:focus, select:focus{
+      border-color: rgba(124,92,255,.45);
+      box-shadow: 0 0 0 6px rgba(124,92,255,.10);
+    }
+    .helper{
+      font-size:12px; color:var(--muted2); line-height:1.35;
+      margin-top:4px;
+    }
+
+    /* Timeline / funnel */
+    .funnel{
+      display:grid; grid-template-columns: 1fr;
+      gap:10px;
+    }
+    .step{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      padding:12px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+    }
+    .step .left{
+      display:flex; align-items:center; gap:10px; min-width:0;
+    }
+    .badge{
+      width:34px;height:34px;border-radius:12px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.05);
+      display:flex; align-items:center; justify-content:center;
+      font-weight:900;
+      color: rgba(255,255,255,.88);
+    }
+    .step .txt{ min-width:0; }
+    .step .txt .t{ font-weight:800; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .step .txt .s{ font-size:12px; color:var(--muted); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .step .num{
+      font-family:var(--mono);
+      font-size:12px;
+      color: rgba(255,255,255,.85);
+      padding:6px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.16);
+      white-space:nowrap;
+    }
+
+    /* Toast */
+    .toast{
+      position:fixed;
+      right:18px; bottom:18px;
+      width:min(420px, calc(100vw - 36px));
+      border:1px solid rgba(255,255,255,.14);
+      border-radius: 18px;
+      background: rgba(10,12,20,.86);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 14px 60px rgba(0,0,0,.5);
+      padding:12px;
+      display:none;
+      z-index:99;
+    }
+    .toast.show{ display:block; animation: pop .22s ease; }
+    @keyframes pop{ from{ transform: translateY(8px); opacity:0 } to{ transform: translateY(0); opacity:1 } }
+    .toast .trow{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+    .toast h4{ margin:0; font-size:13px; }
+    .toast p{ margin:6px 0 0; font-size:12px; color:var(--muted); line-height:1.35; }
+    .toast .x{
+      border:none; background:transparent; color:var(--muted);
+      cursor:pointer; font-size:16px; padding:4px 8px; border-radius:10px;
+    }
+    .toast .x:hover{ background: rgba(255,255,255,.06); color:var(--text); }
+
+    /* Responsive */
+    @media (max-width: 1060px){
+      .app{ grid-template-columns: 1fr; }
+      aside{ position:relative; height:auto; border-right:none; border-bottom:1px solid var(--border); }
+      .aside-footer{ position:relative; left:auto; right:auto; bottom:auto; margin-top:12px; }
+      .kpis{ grid-template-columns: 1fr 1fr; }
+      .grid{ grid-template-columns: 1fr; }
+      .grid2{ grid-template-columns: 1fr; }
+      main{ padding:18px 16px 80px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="bg-grid"></div>
+
+  <div class="app">
+    <!-- Sidebar -->
+    <aside>
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <h1>Sara AI Console</h1>
+          <p>Outbound Voice Operations</p>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="Primary">
+        <a href="#" class="active" data-view="dashboard"><span class="dot"></span> Dashboard</a>
+        <a href="#" data-view="campaigns"><span class="dot"></span> Campaigns</a>
+        <a href="#" data-view="leads"><span class="dot"></span> Leads</a>
+        <a href="#" data-view="persona"><span class="dot"></span> Persona & Script</a>
+        <a href="#" data-view="live"><span class="dot"></span> Live Calls</a>
+        <a href="#" data-view="analytics"><span class="dot"></span> Analytics</a>
+        <a href="#" data-view="settings"><span class="dot"></span> Settings</a>
+      </nav>
+
+      <div class="aside-footer">
+        <div class="pill" title="System Health">
+          <span class="status"></span>
+          Health: <strong style="color:rgba(255,255,255,.92)">Green</strong>
+          <span style="margin-left:auto;color:var(--muted2);font-family:var(--mono)">v12</span>
+        </div>
+        <div class="small" style="margin-top:10px">
+          This is a <strong>product preview mockup</strong> of the Sara AI dashboard:
+          campaign control, live calls, transcripts, outcomes, and performance.
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main>
+      <div class="topbar">
+        <div class="titleblock">
+          <h2 id="viewTitle">Dashboard</h2>
+          <p id="viewSubtitle">
+            A single place to launch campaigns, watch live conversations, and measure real outcomes
+            (pickups → conversations → meetings booked).
+          </p>
+        </div>
+
+        <div class="actions">
+          <button class="btn" id="btnTestCall">Run Test Call</button>
+          <button class="btn" id="btnPause">Pause Campaign</button>
+          <button class="btn primary" id="btnStart">Start Campaign</button>
+        </div>
+      </div>
+
+      <!-- KPI row -->
+      <section class="kpis" aria-label="KPIs">
+        <div class="kpi">
+          <div class="label">Calls Today</div>
+          <div class="value" id="kpiCalls">128</div>
+          <div class="sub">Auto pacing: <strong>1 call / 28s</strong> • Max concurrency: <strong>6</strong></div>
+        </div>
+        <div class="kpi">
+          <div class="label">Pickups</div>
+          <div class="value" id="kpiPickups">41</div>
+          <div class="sub">Pickup rate: <strong id="pickupRate">32.0%</strong> • AMD enabled</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Conversations</div>
+          <div class="value" id="kpiConvos">23</div>
+          <div class="sub">Avg talk time: <strong>01:38</strong> • Barge-in: <strong>On</strong></div>
+        </div>
+        <div class="kpi">
+          <div class="label">Meetings Booked</div>
+          <div class="value" id="kpiBooked">6</div>
+          <div class="sub">Conversion: <strong id="bookRate">4.7%</strong> • Calendar: <strong>Connected</strong></div>
+        </div>
+      </section>
+
+      <div class="grid">
+        <!-- Left: Campaign overview + Live calls -->
+        <section class="card" aria-label="Campaign Overview">
+          <div class="hd">
+            <h3>Active Campaign</h3>
+            <span class="tag good" id="campaignStatus">RUNNING</span>
+          </div>
+          <div class="bd">
+            <div class="form" style="margin-bottom:12px">
+              <div class="field">
+                <label>Campaign Name</label>
+                <input value="Noblecom Growth Audit — Owners (US)" readonly />
+              </div>
+              <div class="field">
+                <label>Persona</label>
+                <select disabled>
+                  <option selected>Sara Hayes — Senior Growth Consultant</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label>Calling Window</label>
+                <input value="Mon–Fri • 10:00–18:00" readonly />
+                <div class="helper">Quiet hours + do-not-call rules enforced automatically.</div>
+              </div>
+              <div class="field">
+                <label>Goal</label>
+                <input value="Book discovery calls (2-slot close)" readonly />
+                <div class="helper">Sara qualifies, handles objections, and closes for a meeting.</div>
+              </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <h3 style="margin:0 0 10px;font-size:14px">Live Calls (Now)</h3>
+            <div class="calls" id="callsList">
+              <div class="call">
+                <div class="meta">
+                  <div class="row">
+                    <span class="tag warn">IN CONVERSATION</span>
+                    <div class="name">Prospect: “James — Roofing Owner”</div>
+                  </div>
+                  <div class="desc">Topic: ad spend waste • booking window • handling “not interested”</div>
+                  <div class="row" style="flex-wrap:wrap">
+                    <span class="tag">To: +1 (302) 212-0664</span>
+                    <span class="tag">From: +1 (309) 450-2249</span>
+                    <span class="tag">Latency: 320ms</span>
+                  </div>
+                </div>
+                <div class="right">
+                  <div class="timer">00:54</div>
+                  <button class="mini-btn" data-open="console">Open Console</button>
+                </div>
+              </div>
+
+              <div class="call">
+                <div class="meta">
+                  <div class="row">
+                    <span class="tag good">QUALIFIED</span>
+                    <div class="name">Prospect: “Amina — Ecom Founder”</div>
+                  </div>
+                  <div class="desc">Sara is proposing 2 meeting slots + confirming email.</div>
+                  <div class="row" style="flex-wrap:wrap">
+                    <span class="tag">To: +1 (920) 459-9650</span>
+                    <span class="tag">Outcome: Booking in progress</span>
+                  </div>
+                </div>
+                <div class="right">
+                  <div class="timer">02:10</div>
+                  <button class="mini-btn" data-open="console">Open Console</button>
+                </div>
+              </div>
+
+              <div class="call">
+                <div class="meta">
+                  <div class="row">
+                    <span class="tag">RINGING</span>
+                    <div class="name">Prospect: “Mike — Contractor”</div>
+                  </div>
+                  <div class="desc">AMD active • will leave polite exit if voicemail detected.</div>
+                  <div class="row" style="flex-wrap:wrap">
+                    <span class="tag">To: +1 (309) 204-5965</span>
+                    <span class="tag">Retries: 1 / 3</span>
+                  </div>
+                </div>
+                <div class="right">
+                  <div class="timer">00:12</div>
+                  <button class="mini-btn" data-open="console">Open Console</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:space-between; align-items:center">
+              <div class="small">
+                <strong>What this proves:</strong> Sara AI can run outbound campaigns, stream live audio via Twilio Media Streams,
+                and report outcomes in a single operator-friendly console.
+              </div>
+              <span class="pill" style="margin-left:auto">
+                <span class="status" style="background:var(--accent2);box-shadow: 0 0 0 6px rgba(46,197,255,.12)"></span>
+                Twilio WS Connected
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Right: Live console + Funnel -->
+        <section class="card" aria-label="Live Call Console">
+          <div class="hd">
+            <h3>Live Call Console</h3>
+            <span class="tag" style="font-family:var(--mono)">trace_id: ae5c…deee</span>
+          </div>
+          <div class="bd console">
+            <div class="panel">
+              <div class="small" style="margin-bottom:10px">
+                <strong>Live transcript + intent signals:</strong> this is what makes Sara feel like a real agent, not an IVR.
+              </div>
+
+              <div class="line">
+                <div class="who prospect">Prospect</div>
+                <div class="text">I’m busy… what’s this about?</div>
+                <div class="stamp">t+00:21</div>
+              </div>
+
+              <div class="line">
+                <div class="who sara">Sara</div>
+                <div class="text">Totally fair — I’ll be brief. I’m calling because we’re seeing a pattern where owners are paying for traffic but leaking revenue on the website. If I can point out one quick win in 30 seconds, would you want to hear it?</div>
+                <div class="stamp">t+00:27</div>
+              </div>
+
+              <div class="line">
+                <div class="who prospect">Prospect</div>
+                <div class="text">Maybe. I’m not looking to hire anyone right now.</div>
+                <div class="stamp">t+00:41</div>
+              </div>
+
+              <div class="line" style="margin-bottom:0">
+                <div class="who sara">Sara</div>
+                <div class="text">That’s exactly why this helps — it’s not a “hire us” call. It’s a quick audit to show what’s being missed. If it’s useful, we’ll book 15 minutes. If not, you’ll still leave with the insight. Does tomorrow morning or Thursday afternoon work better?</div>
+                <div class="stamp">t+00:54</div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div style="display:flex; gap:10px; flex-wrap:wrap">
+                <span class="tag good">Signal: Interested</span>
+                <span class="tag warn">Objection: “Not hiring”</span>
+                <span class="tag">Stage: 2-slot close</span>
+                <span class="tag">Next: confirm email + time</span>
+              </div>
+              <div class="divider"></div>
+              <div style="display:flex; gap:10px; flex-wrap:wrap">
+                <button class="btn" style="padding:9px 10px;border-radius:12px" id="btnTagBooked">Tag as Booked</button>
+                <button class="btn" style="padding:9px 10px;border-radius:12px" id="btnTagCallback">Request Callback</button>
+                <button class="btn danger" style="padding:9px 10px;border-radius:12px" id="btnTagDNC">Add to DNC</button>
+              </div>
+            </div>
+
+            <div class="panel">
+              <h3 style="margin:0 0 10px;font-size:14px">Today’s Funnel</h3>
+              <div class="funnel">
+                <div class="step">
+                  <div class="left">
+                    <div class="badge">1</div>
+                    <div class="txt">
+                      <div class="t">Dialed</div>
+                      <div class="s">Outbound calls attempted</div>
+                    </div>
+                  </div>
+                  <div class="num">128</div>
+                </div>
+                <div class="step">
+                  <div class="left">
+                    <div class="badge">2</div>
+                    <div class="txt">
+                      <div class="t">Picked Up</div>
+                      <div class="s">Human answered (AMD filtered)</div>
+                    </div>
+                  </div>
+                  <div class="num">41</div>
+                </div>
+                <div class="step">
+                  <div class="left">
+                    <div class="badge">3</div>
+                    <div class="txt">
+                      <div class="t">Conversation</div>
+                      <div class="s">Meaningful dialogue started</div>
+                    </div>
+                  </div>
+                  <div class="num">23</div>
+                </div>
+                <div class="step">
+                  <div class="left">
+                    <div class="badge">4</div>
+                    <div class="txt">
+                      <div class="t">Booked</div>
+                      <div class="s">Meeting scheduled + confirmed</div>
+                    </div>
+                  </div>
+                  <div class="num">6</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Lower grid -->
+      <div class="grid2">
+        <section class="card" aria-label="Leads & Targeting">
+          <div class="hd">
+            <h3>Leads & Targeting</h3>
+            <span class="tag">CSV • Dedupe • Tags</span>
+          </div>
+          <div class="bd">
+            <div class="small">
+              Upload leads, auto-dedupe numbers, tag segments, and let Sara run outreach within safe rate limits.
+            </div>
+            <div class="divider"></div>
+            <div class="form" style="grid-template-columns:1fr">
+              <div class="field">
+                <label>Segment</label>
+                <select>
+                  <option selected>Owners • Home Services • US</option>
+                  <option>Ecom Founders • DTC • US</option>
+                  <option>Clinics • Local • UK</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Lead File</label>
+                <input value="leads_home_services_us.csv (2,142 rows)" readonly />
+                <div class="helper">Auto checks: invalid numbers, duplicates, DNC list, timezone windows.</div>
+              </div>
+            </div>
+            <div class="divider"></div>
+            <button class="btn primary" style="width:100%">Import Leads</button>
+          </div>
+        </section>
+
+        <section class="card" aria-label="Persona & Script">
+          <div class="hd">
+            <h3>Persona & Script</h3>
+            <span class="tag">Locked Persona</span>
+          </div>
+          <div class="bd">
+            <div class="small">
+              Sara runs on a strict persona file: never reveals AI, stays on-topic, uses objection handling, and closes for meetings.
+            </div>
+            <div class="divider"></div>
+            <div class="form" style="grid-template-columns:1fr">
+              <div class="field">
+                <label>Persona Template</label>
+                <select>
+                  <option selected>Sara Hayes — Growth Consultant (v2.1.0)</option>
+                  <option>Sara — Lead Gen Specialist (v2.0.3)</option>
+                  <option>Sara — Ecom CRO Advisor (v1.9.8)</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Offer (Editable)</label>
+                <input value="30-second quick win + 15-min audit" />
+              </div>
+              <div class="field">
+                <label>Close (2-slot meeting)</label>
+                <input value="Tomorrow morning OR Thursday afternoon?" />
+              </div>
+            </div>
+            <div class="divider"></div>
+            <button class="btn" style="width:100%">Preview Script</button>
+          </div>
+        </section>
+
+        <section class="card" aria-label="System Health & Integrations">
+          <div class="hd">
+            <h3>System Health</h3>
+            <span class="tag good">All Systems OK</span>
+          </div>
+          <div class="bd">
+            <div class="small">
+              Real-time telephony requires rock-solid infrastructure: streaming health, TTS readiness, and error visibility.
+            </div>
+            <div class="divider"></div>
+
+            <div class="step">
+              <div class="left">
+                <div class="badge" style="background:rgba(46,229,157,.12);border-color:rgba(46,229,157,.35)">✓</div>
+                <div class="txt">
+                  <div class="t">Twilio Media Streams</div>
+                  <div class="s">WebSocket connected • lifecycle OK</div>
+                </div>
+              </div>
+              <div class="num">OK</div>
+            </div>
+
+            <div class="step" style="margin-top:10px">
+              <div class="left">
+                <div class="badge" style="background:rgba(46,229,157,.12);border-color:rgba(46,229,157,.35)">✓</div>
+                <div class="txt">
+                  <div class="t">Deepgram TTS</div>
+                  <div class="s">8kHz μ-law • 160-byte frames</div>
+                </div>
+              </div>
+              <div class="num">OK</div>
+            </div>
+
+            <div class="step" style="margin-top:10px">
+              <div class="left">
+                <div class="badge" style="background:rgba(255,200,87,.12);border-color:rgba(255,200,87,.35)">!</div>
+                <div class="txt">
+                  <div class="t">Scale Readiness</div>
+                  <div class="s">Stress test pending (50 concurrent)</div>
+                </div>
+              </div>
+              <div class="num">PENDING</div>
+            </div>
+
+            <div class="divider"></div>
+            <button class="btn" style="width:100%">Open Diagnostics</button>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <div class="trow">
+      <div>
+        <h4 id="toastTitle">Action</h4>
+        <p id="toastMsg">Done.</p>
+      </div>
+      <button class="x" id="toastClose" aria-label="Close">✕</button>
+    </div>
+  </div>
+
+  <script>
+    // ---------- Simple demo interactivity (mock only) ----------
+    const toast = document.getElementById("toast");
+    const toastTitle = document.getElementById("toastTitle");
+    const toastMsg = document.getElementById("toastMsg");
+    const toastClose = document.getElementById("toastClose");
+
+    function showToast(title, msg){
+      toastTitle.textContent = title;
+      toastMsg.textContent = msg;
+      toast.classList.add("show");
+      window.clearTimeout(showToast._t);
+      showToast._t = window.setTimeout(()=>toast.classList.remove("show"), 4200);
+    }
+    toastClose.addEventListener("click", ()=> toast.classList.remove("show"));
+
+    // Nav switching (visual only)
+    const navLinks = [...document.querySelectorAll(".nav a")];
+    const viewTitle = document.getElementById("viewTitle");
+    const viewSubtitle = document.getElementById("viewSubtitle");
+
+    const subtitles = {
+      dashboard: "A single place to launch campaigns, watch live conversations, and measure real outcomes (pickups → conversations → meetings booked).",
+      campaigns: "Create, schedule, and manage outbound campaigns with safe defaults: pacing, quiet hours, retries, and DNC enforcement.",
+      leads: "Upload CSV leads, auto-dedupe numbers, segment targets, and prepare lists for compliant outreach.",
+      persona: "Edit offers, rules, and objection handling while keeping Sara’s persona locked and consistent across calls.",
+      live: "Monitor live calls, view streaming transcripts, see intent signals, and tag outcomes instantly.",
+      analytics: "Track pickup rate, conversation rate, booking conversion, costs, and ROI—by segment, script, and time window.",
+      settings: "Connect Twilio, TTS, and LLM keys; set voice defaults, compliance toggles, and diagnostic tools."
+    };
+
+    navLinks.forEach(a=>{
+      a.addEventListener("click", (e)=>{
+        e.preventDefault();
+        navLinks.forEach(x=>x.classList.remove("active"));
+        a.classList.add("active");
+        const view = a.dataset.view || "dashboard";
+        viewTitle.textContent = a.textContent.trim();
+        viewSubtitle.textContent = subtitles[view] || subtitles.dashboard;
+        showToast("Navigation", `Opened: ${a.textContent.trim()}`);
+      });
+    });
+
+    // Buttons
+    const btnStart = document.getElementById("btnStart");
+    const btnPause = document.getElementById("btnPause");
+    const btnTestCall = document.getElementById("btnTestCall");
+    const campaignStatus = document.getElementById("campaignStatus");
+
+    btnStart.addEventListener("click", ()=>{
+      campaignStatus.textContent = "RUNNING";
+      campaignStatus.className = "tag good";
+      showToast("Campaign Started", "Sara is dialing with safe pacing and live monitoring enabled.");
+    });
+
+    btnPause.addEventListener("click", ()=>{
+      campaignStatus.textContent = "PAUSED";
+      campaignStatus.className = "tag warn";
+      showToast("Campaign Paused", "Dialing stopped. Live calls continue until completed.");
+    });
+
+    btnTestCall.addEventListener("click", ()=>{
+      showToast("Test Call", "Running end-to-end test: Twilio → WebSocket → TTS → outbound frames.");
+      // simulate KPI nudge
+      const calls = document.getElementById("kpiCalls");
+      calls.textContent = String(parseInt(calls.textContent,10) + 1);
+    });
+
+    // Tagging outcomes
+    document.getElementById("btnTagBooked").addEventListener("click", ()=>{
+      const booked = document.getElementById("kpiBooked");
+      booked.textContent = String(parseInt(booked.textContent,10) + 1);
+      showToast("Outcome Updated", "Tagged call as Booked. Meeting saved to results.");
+    });
+    document.getElementById("btnTagCallback").addEventListener("click", ()=>{
+      showToast("Callback Requested", "Callback flagged. Sara will re-attempt within the campaign window.");
+    });
+    document.getElementById("btnTagDNC").addEventListener("click", ()=>{
+      showToast("Added to DNC", "Number added to Do-Not-Call. Future dials blocked automatically.");
+    });
+
+    // Open console buttons
+    document.querySelectorAll('[data-open="console"]').forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        showToast("Live Console", "Opening transcript + intent signals for this call (mock).");
+        // Scroll to the console card for demo
+        const consoleCard = document.querySelector('[aria-label="Live Call Console"]');
+        consoleCard.scrollIntoView({behavior:"smooth", block:"start"});
+      });
+    });
+
+    // Rates (calculated once)
+    function updateRates(){
+      const calls = parseInt(document.getElementById("kpiCalls").textContent,10);
+      const pickups = parseInt(document.getElementById("kpiPickups").textContent,10);
+      const booked = parseInt(document.getElementById("kpiBooked").textContent,10);
+
+      const pr = calls ? (pickups/calls*100) : 0;
+      document.getElementById("pickupRate").textContent = pr.toFixed(1) + "%";
+
+      const br = calls ? (booked/calls*100) : 0;
+      document.getElementById("bookRate").textContent = br.toFixed(1) + "%";
+    }
+    updateRates();
+    // Update rates when KPIs change (simple)
+    const obs = new MutationObserver(updateRates);
+    ["kpiCalls","kpiPickups","kpiBooked"].forEach(id=>{
+      obs.observe(document.getElementById(id), {childList:true});
+    });
+  </script>
+</body>
+</html>
